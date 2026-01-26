@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Satellite Health Monitoring – Mission Control</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+/* ========== RESET ========== */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  height: 100%;
+  background: #020617;
+  color: #fff;
+  font-family: Inter, system-ui, sans-serif;
+}
+
+/* ========== SPACE BACKGROUND ========== */
+#space { position: fixed; inset: 0; z-index: 0; }
+.overlay {
+  position: fixed; inset: 0;
+  background: linear-gradient(to bottom, rgba(2,6,23,.3), rgba(2,6,23,.85));
+  z-index: 1;
+}
+
+/* ========== APP ========== */
+.app { position: relative; z-index: 2; min-height: 100vh; display: flex; flex-direction: column; }
+
+/* ========== HEADER ========== */
+header {
+  padding: 22px 48px;
+  border-bottom: 1px solid rgba(0,243,255,.35);
+  backdrop-filter: blur(14px);
+}
+header h1 {
+  letter-spacing: 3px;
+  color: #00f3ff;
+  text-shadow: 0 0 14px rgba(0,243,255,.7);
+}
+header p { margin-top: 6px; font-size: 13px; color: #c9f9ff; }
+
+/* ========== DASHBOARD ========== */
+.dashboard {
+  flex: 1;
+  max-width: 1400px;
+  margin: auto;
+  padding: 40px;
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 36px;
+}
+
+/* ========== PANELS ========== */
+.panel {
+  background: rgba(5,12,30,.7);
+  backdrop-filter: blur(18px);
+  border-radius: 22px;
+  border: 1px solid rgba(0,243,255,.3);
+  padding: 32px;
+}
+
+/* ========== INPUT PANEL ========== */
+.panel h2 { color: #00f3ff; letter-spacing: 2px; margin-bottom: 22px; }
+.inputs { display: grid; grid-template-columns: repeat(2,1fr); gap: 22px; }
+.instrument {
+  background: linear-gradient(145deg,#0a1422,#152238);
+  border-radius: 14px;
+  padding: 16px;
+  border: 2px solid rgba(0,243,255,.35);
+}
+.instrument label { font-size: 12px; color: #9aefff; }
+.instrument small { font-size: 11px; color: #b7c7d9; }
+.input-row { margin-top: 10px; display: flex; gap: 10px; }
+input[type="number"] {
+  width: 90px; height: 38px;
+  background: #0a1422;
+  border: 2px solid rgba(0,243,255,.45);
+  border-radius: 8px;
+  color: #fff;
+}
+input[type="range"] { flex: 1; accent-color: #00f3ff; }
+
+/* ========== BUTTON ========== */
+button {
+  margin-top: 26px;
+  width: 100%; height: 52px;
+  border-radius: 26px;
+  border: none;
+  background: radial-gradient(circle,#00f3ff,#0066ff);
+  font-weight: 800;
+  letter-spacing: 2px;
+  cursor: pointer;
+}
+
+/* ========== STATUS PANEL ========== */
+.status {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ========== DUAL RING ========== */
+.ring-wrap {
+  position: relative;
+  width: 220px;
+  height: 220px;
+  margin-bottom: 22px;
+}
+
+/* OUTER PROCESSING RING */
+.outer-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 3px dashed rgba(0,243,255,.5);
+  animation: spin 6s linear infinite;
+}
+
+/* INNER CONFIDENCE RING */
+svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.ring-bg {
+  fill: none;
+  stroke: rgba(255,255,255,0.08);
+  stroke-width: 10;
+}
+.ring-progress {
+  fill: none;
+  stroke-width: 10;
+  stroke-linecap: round;
+  stroke-dasharray: 565;
+  stroke-dashoffset: 565;
+  transition: stroke-dashoffset .8s ease, stroke .4s ease;
+}
+
+/* TEXT */
+.status-label { font-size: 32px; letter-spacing: 4px; }
+.confidence { margin-top: 8px; font-size: 18px; color: #9aefff; }
+
+/* ALERT */
+.alert {
+  margin-top: 18px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,51,51,.7);
+  color: #ff3333;
+  box-shadow: 0 0 18px rgba(255,51,51,.6);
+}
+.hidden { display: none; }
+
+/* COLORS */
+.healthy { color: #00ff88; }
+.risk { color: #ffaa00; }
+.failure { color: #ff3333; }
+
+/* FOOTER */
+footer {
+  margin-top: auto;
+  padding: 18px;
+  text-align: center;
+  border-top: 1px solid rgba(0,243,255,.25);
+}
+footer span { color: #00f3ff; }
+
+/* ANIMATIONS */
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* RESPONSIVE */
+@media(max-width:900px){
+  .dashboard { grid-template-columns: 1fr; }
+  .inputs { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+
+<body>
+
+<canvas id="space"></canvas>
+<div class="overlay"></div>
+
+<div class="app">
+
+<header>
+  <h1>SATELLITE HEALTH MONITORING</h1>
+  <p>Mission telemetry • Failure risk prediction • ML powered</p>
+</header>
+
+<div class="dashboard">
+
+<!-- INPUT PANEL -->
+<div class="panel">
+  <h2>TELEMETRY INPUT PANEL</h2>
+  <div class="inputs">
+    <div class="instrument"><label>Battery Voltage</label><small>24–30 V</small><div class="input-row"><input id="battery_voltage" type="number"><input type="range" min="20" max="35" oninput="sync(this,'battery_voltage')"></div></div>
+    <div class="instrument"><label>Battery Current</label><small>3–7 A</small><div class="input-row"><input id="battery_current" type="number"><input type="range" min="0" max="10" oninput="sync(this,'battery_current')"></div></div>
+    <div class="instrument"><label>Temperature</label><small>0–60 °C</small><div class="input-row"><input id="temperature" type="number"><input type="range" min="-10" max="100" oninput="sync(this,'temperature')"></div></div>
+    <div class="instrument"><label>CPU Load</label><small>10–70 %</small><div class="input-row"><input id="cpu_load" type="number"><input type="range" min="0" max="100" oninput="sync(this,'cpu_load')"></div></div>
+    <div class="instrument"><label>Sensor Error Rate</label><small>&lt; 0.15</small><div class="input-row"><input id="sensor_error_rate" type="number" step="0.01"><input type="range" min="0" max="1" step="0.01" oninput="sync(this,'sensor_error_rate')"></div></div>
+  </div>
+  <button onclick="analyze()">INITIATE SYSTEM ANALYSIS</button>
+</div>
+
+<!-- STATUS PANEL -->
+<div class="panel status">
+
+  <div class="ring-wrap">
+    <div id="outerRing" class="outer-ring"></div>
+    <svg>
+      <circle class="ring-bg" cx="110" cy="110" r="90"/>
+      <circle id="ringProgress" class="ring-progress" cx="110" cy="110" r="90"/>
+    </svg>
+  </div>
+
+  <div id="statusText" class="status-label">AWAITING DATA</div>
+  <div id="confidenceText" class="confidence">SYSTEM STANDBY</div>
+  <div id="alertBox" class="alert hidden">⚠ ANOMALY DETECTED</div>
+
+</div>
+
+</div>
+
+<footer>
+  <p>© 2026 <span>VaibhavP</span> · vaibhavp9901@gmail.com · 7618724668</p>
+</footer>
+
+</div>
+
+<script>
+function sync(slider,id){ document.getElementById(id).value = slider.value; }
+
+async function analyze(){
+  const payload = {
+    battery_voltage:+battery_voltage.value,
+    battery_current:+battery_current.value,
+    temperature:+temperature.value,
+    cpu_load:+cpu_load.value,
+    sensor_error_rate:+sensor_error_rate.value
+  };
+
+  const res = await fetch("http://127.0.0.1:8000/predict",{
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body:JSON.stringify(payload)
+  });
+  const data = await res.json();
+
+  const ring = document.getElementById("ringProgress");
+  const outer = document.getElementById("outerRing");
+  const status = document.getElementById("statusText");
+  const conf = document.getElementById("confidenceText");
+
+  outer.style.display = "none"; // stop processing ring
+
+  const circumference = 565;
+  ring.style.strokeDashoffset = circumference - (data.risk_score * circumference);
+
+  status.className = "status-label";
+  alertBox.classList.add("hidden");
+
+  if(data.prediction==="Healthy"){
+    ring.style.stroke="#00ff88";
+    status.textContent="HEALTHY";
+    status.classList.add("healthy");
+  } else if(data.prediction==="At Risk"){
+    ring.style.stroke="#ffaa00";
+    status.textContent="AT RISK";
+    status.classList.add("risk");
+    alertBox.classList.remove("hidden");
+  } else {
+    ring.style.stroke="#ff3333";
+    status.textContent="FAILURE";
+    status.classList.add("failure");
+    alertBox.classList.remove("hidden");
+  }
+
+  conf.textContent=`Confidence: ${(data.risk_score*100).toFixed(0)}%`;
+}
+
+/* STARFIELD */
+const c=space,x=c.getContext("2d");let w,h;
+function r(){w=c.width=innerWidth;h=c.height=innerHeight}
+addEventListener("resize",r);r();
+const s=[...Array(500)].map(()=>({x:Math.random()*w,y:Math.random()*h,r:Math.random()*1.2,v:.1+Math.random()*.2}));
+(function d(){x.clearRect(0,0,w,h);s.forEach(a=>{x.beginPath();x.arc(a.x,a.y,a.r,0,7);x.fillStyle="rgba(255,255,220,.8)";x.fill();a.y+=a.v;if(a.y>h)a.y=0});requestAnimationFrame(d)})();
+</script>
+
+</body>
+</html>
