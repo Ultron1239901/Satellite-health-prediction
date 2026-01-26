@@ -155,16 +155,7 @@ Sensor Error Rate : 0.30
 }
 
 
----
 
-
-If you want, next I can:
-- Convert this into a **GitHub-optimized README**
-- Add **architecture diagrams**
-- Write a **project description for resumes / LinkedIn**
-- Help you present this as a **hackathon or interview project**
-
-Just say the word 👊
 
 
 
