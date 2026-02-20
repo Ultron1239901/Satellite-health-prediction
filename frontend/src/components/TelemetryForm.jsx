@@ -1,5 +1,6 @@
 import { useState } from "react"
 import ResultCard from "./ResultCard"
+const API_URL = import.meta.env.VITE_API_URL;
 
 const FIELDS = [
   { key: "battery_voltage", label: "Battery Voltage", range: "24–30 V" },
@@ -14,7 +15,7 @@ export default function TelemetryForm() {
   const [result, setResult] = useState(null)
 
   const submit = async () => {
-    const res = await fetch("https://satellite-health-prediction-q7a8.onrender.com/predict", {
+    const res = await fetch(`${API_URL}/predict`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
