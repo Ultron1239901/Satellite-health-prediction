@@ -1,0 +1,115 @@
+*********ICU******************
+
+Now we need to install the python 3.10.11
+1) install it in the official python in the browser
+2) Now add this to the path
+ In search bar search:
+Environment variables-> Advanced-> Environment variables -> Inside System variables -> path -> add the python 3.10 path to it both script and normal path
+
+now check in cmd python --version you should get python 3.10.11
+
+3) Now create the folder named ICU
+ open with vscode
+open terminal
+
+4) Now install create the virtual environment
+python -m venv venv
+venv\Scripts\activate
+
+you should see: (venv)
+
+if not see then open powershell as administrator in the search bar
+Set-ExecutionPolicy RemoteSigned
+
+-----------------------------------------
+
+
+******* library installation **********
+In the vscode terminal
+
+
+1) Core ML + Data:
+
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
+pip install pytorch-forecasting pytorch-lightning
+pip install pandas numpy scikit-learn
+
+2) Uncertainty + Causal
+
+pip install dowhy networkx
+
+3) Backend + Frontend
+
+pip install fastapi uvicorn streamlit
+
+4) Federated (simulated)
+
+pip install flwr
+
+5)Edge deployment
+
+pip install onnx onnxruntime
+
+6)Utilities
+
+pip install matplotlib seaborn pydantic
+
+------------Library installation is over----------------
+
+Now import the library
+batch import
+1) create a file called sanity_check.py
+import torch
+import pandas as pd
+from pytorch_forecasting import TemporalFusionTransformer
+import dowhy
+import fastapi
+import streamlit
+import onnxruntime
+
+print("All imports successful")
+4
+
+2) now run 
+python sanity_check.py
+
+Now create the folder structure like this
+AI_ICU_Before_ICU/
+│
+├── data/
+│   ├── raw/
+│   ├── processed/
+│   ├── synthetic/
+│
+├── experiments/
+│   ├── tft_baseline/
+│   ├── tft_mc_dropout/
+│   ├── federated/
+│
+├── causal/
+│   ├── causal_graph.py
+│   ├── counterfactuals.py
+│
+├── backend/
+│   ├── main.py
+│   ├── schemas.py
+│   ├── inference.py
+│
+├── frontend/
+│   ├── app.py
+│   ├── patient_view.py
+│   ├── doctor_view.py
+│
+├── edge/
+│   ├── export_onnx.py
+│   ├── test_inference.py
+│
+├── rules/
+│   └── alert_engine.py
+│
+├── utils/
+│   └── preprocessing.py
+│
+└── README.md
+
+

@@ -1,0 +1,186 @@
+Open the google colab to train the model
+
+** Just run these on the google colab**
+
+
+1)Install the required libraries
+!pip install scikit-learn pandas numpy joblib
+
+2) import the libraries
+import numpy as np
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score
+import joblib
+
+
+3) Generate the Telemetry Dataset of satellite some random
+np.random.seed(42)
+
+samples = 5000
+
+data = pd.DataFrame({
+    "battery_voltage": np.random.normal(28, 4, samples),
+    "battery_current": np.random.normal(5, 1.5, samples),
+    "temperature": np.random.normal(40, 15, samples),
+    "cpu_load": np.random.uniform(10, 100, samples),
+    "sensor_error_rate": np.random.uniform(0, 0.2, samples)
+})
+
+def label_health(row):
+    if row["battery_voltage"] < 20 or row["temperature"] > 80 or row["sensor_error_rate"] > 0.15:
+        return 2  # Failure
+    elif row["battery_voltage"] < 24 or row["temperature"] > 60:
+        return 1  # At Risk
+    else:
+        return 0  # Healthy
+
+data["target"] = data.apply(label_health, axis=1)
+
+data.head()
+
+
+4)Train test split
+X = data.drop("target", axis=1)
+y = data["target"]
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42
+)
+
+5)Train logistic regression
+lr = LogisticRegression(max_iter=200)
+lr.fit(X_train, y_train)
+
+lr_preds = lr.predict(X_test)
+lr_acc = accuracy_score(y_test, lr_preds)
+
+print("Logistic Regression Accuracy:", lr_acc)
+
+
+6) Train random forest
+
+rf = RandomForestClassifier(n_estimators=200, random_state=42)
+rf.fit(X_train, y_train)
+
+rf_preds = rf.predict(X_test)
+rf_acc = accuracy_score(y_test, rf_preds)
+
+print("Random Forest Accuracy:", rf_acc)
+
+7) save the best model
+
+best_model = rf if rf_acc > lr_acc else lr
+
+joblib.dump(best_model, "satellite_health_model.pkl")
+print("Model saved as satellite_health_model.pkl")
+
+---------------------This is till the google colab training----------------
+
+************ Backend setup ****************
+
+Create a folder named Satellite project inside it put this
+
+1)Create the virtual environment
+
+python -m venv venv
+source venv/bin/activate   # Linux/Mac
+venv\Scripts\activate      # Windows
+
+2) Now create the folder structure like this inside the Satellite project
+
+backend/
+│
+├── main.py
+├── model/
+│   └── satellite_health_model.pkl
+├── requirements.txt
+
+3) Inside the requirements.txt put these and run
+fastapi
+uvicorn
+scikit-learn
+joblib
+pydantic
+
+now run : pip install -r requirements.txt
+
+4) This is the fast api code now you need to create a folder called main.py
+
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+import joblib
+import numpy as np
+
+app = FastAPI(title="Satellite Health Monitoring API")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+model = joblib.load("model/satellite_health_model.pkl")
+
+class TelemetryInput(BaseModel):
+    battery_voltage: float
+    battery_current: float
+    temperature: float
+    cpu_load: float
+    sensor_error_rate: float
+
+@app.post("/predict")
+def predict(data: TelemetryInput):
+    features = np.array([[ 
+        data.battery_voltage,
+        data.battery_current,
+        data.temperature,
+        data.cpu_load,
+        data.sensor_error_rate
+    ]])
+
+    prediction = model.predict(features)[0]
+    probability = model.predict_proba(features).max()
+
+    status_map = {
+        0: "Healthy",
+        1: "At Risk",
+        2: "Failure"
+    }
+
+    return {
+        "prediction": status_map[prediction],
+        "risk_score": round(float(probability), 2)
+    }
+
+5) Run the backend
+uvicorn main:app --reload
+
+----------------Backend complete------------------
+
+*************Front end setup**********************
+
+1) Donot create any folder the npm will do itself unless you got the error
+
+2) Now run
+npm create vite@latest frontend
+
+(The green dot indicate selected)
+
+you will get option in that select react and then select javascript 
+
+then do :   cd frontend
+ npm install
+
+
+3)Install the tailwind css
+
+npm install -D tailwindcss postcss autoprefixer
+npx tailwindcss init -p
+ if you get error create the folder structure like this 
+
+
